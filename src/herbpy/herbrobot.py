@@ -174,7 +174,7 @@ class HERBRobot(prpy.base.WAMRobot):
             logger.debug('Loading ROSController plugin for trajectory visualization.')
 
             # Args: controller_type node_name namespace [extra_flags [...]]
-            args = 'ROSController prpy visualization noread'
+            args = 'ROSController prpy visualization noread noswitch'
             self.ros_controller = RaveCreateController(env, args)
 
             dof_indices  = []
@@ -186,13 +186,14 @@ class HERBRobot(prpy.base.WAMRobot):
                 logger.debug('Initializing ROSController with DOFs %s.', dof_indices)
                 self.ros_controller.Init(self, dof_indices, 0)
             else:
+                self.ros_controller = None
                 logger.warning('Unable to load ROSController plugin. Trajectory'
                                ' visualization messages will not be published.'
                                ' Do you have or_ros_control installed?')
         else:
+            self.ros_controller = None
             logger.debug('Skipping laoding ROSController plugin because'
                          ' left_arm_sim, right_arm_sim, and head_sim are True.')
-
 
     def CloneBindings(self, parent):
         from prpy import Cloned
@@ -276,6 +277,61 @@ class HERBRobot(prpy.base.WAMRobot):
         finally:
             if not robot.vision_sim:
                 robot.vision_sensorsystem.SendCommand('Disable')
+
+    def ExecuteTrajectory(self, traj, *args, **kw_args):
+        from openravepy import RaveCreateTrajectory
+        ConvertTrajectorySpecification = openravepy.planningutils.ConvertTrajectorySpecification
+
+        sp = openravepy.Robot.SaveParameters
+        env = self.GetEnv()
+
+        # Optionally publish the trajectory for visualization.
+        cspec = traj.GetConfigurationSpecification()
+        is_supported_type = (traj.GetXMLId() == 'GenericTrajectory')
+        has_affine_dofs = cspec.FindCompatibleGroup('affine_transform', False) is not None
+
+        if self.ros_controller is not None and is_supported_type and not has_affine_dofs:
+            with env:
+                # Construct the target ConfigurationSpecification. This
+                # includes the joint angles and their derivatives for all
+                # joints supported by the ROSController.
+                with self.CreateRobotStateSaver(sp.ActiveDOF):
+                    dof_indices = self.ros_controller.GetControlDOFIndices()
+                    self.SetActiveDOFs(dof_indices)
+                    target_cspec = self.GetActiveConfigurationSpecification()
+                    target_cspec.AddDerivativeGroups(1, True)
+                    target_cspec.AddDerivativeGroups(2, False)
+
+                # Copy the input trajectory.
+                cloned_traj = RaveCreateTrajectory(env, traj.GetXMLId())
+                cloned_traj.Clone(traj, 0)
+
+                # Expand the trajectory to include all of the DOFs supported by
+                # the ROSController used to publish the trajectory. We do this
+                # with the environment locked just in case
+                # ConvertTrajectoryRepresentation reads unknown DOF values from 
+                # the current state of the environment.
+                # TODO: Is this actually what ConvertTrajectoryRepresentation does?
+                ConvertTrajectorySpecification(cloned_traj, target_cspec)
+
+            # Use ROSController to publish the trajectory.
+            # TODO: Add support for affine DOFs.
+            self.ros_controller.SetPath(cloned_traj)
+        elif self.ros_controller is not None:
+            if not is_supported_type:
+                logger.warning('Visualizing trajectory type "%s" is not supported.',
+                    traj.GetXMLId())
+
+            if has_affine_dofs:
+                logger.warning('Visualizing base trajectories is not supported.')
+
+        # Delegate to the existing ExecuteTrajectory function.
+        # TODO: Ideally, we would do this after timing the trajectory. However,
+        # this won't work if we're using MacTrajectory's because we cannot
+        # represent a MacTrajectory as a ROS trajectory message. Instead, we
+        # output the raw, un-timed waypoints. This would also allow us to only
+        # visualize trajectories that are sent to the controller for execution.
+        return prpy.base.WAMRobot.ExecuteTrajectory(self, traj, *args, **kw_args)
 
     def DriveStraightUntilForce(robot, direction, velocity=0.1,
                                 force_threshold=3.0, max_distance=None,
