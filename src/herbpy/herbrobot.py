@@ -29,13 +29,18 @@ class HERBRobot(prpy.base.WAMRobot):
         from herbbase import HerbBase
         from prpy.base import BarrettHand, WAM
         from herbpantilt import HERBPantilt
-        prpy.bind_subclass(self.left_arm, WAM, sim=left_arm_sim, owd_namespace='/left/owd')
-        prpy.bind_subclass(self.right_arm, WAM, sim=right_arm_sim, owd_namespace='/right/owd')
-        prpy.bind_subclass(self.head, HERBPantilt, sim=head_sim, owd_namespace='/head/owd')
-        prpy.bind_subclass(self.left_arm.hand, BarrettHand, sim=left_hand_sim, manipulator=self.left_arm,
-                           owd_namespace='/left/owd', bhd_namespace='/left/bhd', ft_sim=right_ft_sim)
-        prpy.bind_subclass(self.right_arm.hand, BarrettHand, sim=right_hand_sim, manipulator=self.right_arm,
-                           owd_namespace='/right/owd', bhd_namespace='/right/bhd', ft_sim=right_ft_sim)
+        prpy.bind_subclass(self.left_arm, WAM, sim=left_arm_sim,
+                           owd_namespace='/left/owd')
+        prpy.bind_subclass(self.right_arm, WAM, sim=right_arm_sim,
+                           owd_namespace='/right/owd')
+        prpy.bind_subclass(self.head, HERBPantilt, sim=head_sim,
+                           owd_namespace='/head/owd')
+        prpy.bind_subclass(self.left_arm.hand, BarrettHand, sim=left_hand_sim,
+                           manipulator=self.left_arm, ft_sim=right_ft_sim,
+                           owd_namespace='/left/owd', bhd_namespace='/left/bhd')
+        prpy.bind_subclass(self.right_arm.hand, BarrettHand, sim=right_hand_sim,
+                           manipulator=self.right_arm, ft_sim=right_ft_sim,
+                           owd_namespace='/right/owd', bhd_namespace='/right/bhd')
         self.base = HerbBase(sim=segway_sim, robot=self)
         
         # Support for named configurations.
@@ -48,29 +53,37 @@ class HERBRobot(prpy.base.WAMRobot):
 
         if prpy.dependency_manager.is_catkin():
             from catkin.find_in_workspaces import find_in_workspaces
-            configurations_paths = find_in_workspaces(search_dirs=['share'], project='herbpy',
-                    path='config/configurations.yaml', first_match_only=True)
+            configurations_paths = find_in_workspaces(search_dirs=['share'],
+                    project='herbpy', path='config/configurations.yaml',
+                    first_match_only=True)
+
             if not configurations_paths:
-                raise ValueError('Unable to load named configurations from "config/configurations.yaml".')
+                raise ValueError('Unable to load named configurations from'
+                                 ' "config/configurations.yaml".')
 
             configurations_path = configurations_paths[0]
         else:
-            configurations_path = os.path.join(package_path, 'config/configurations.yaml')
+            configurations_path = os.path.join(package_path,
+                    'config/configurations.yaml')
 
         try:
             self.configurations.load_yaml(configurations_path)
         except IOError as e:
-            raise ValueError('Failed laoding named configurations from "{:s}".'.format(
-                configurations_path))
+            raise ValueError('
+                Failed laoding named configurations from "{:s}".'.format(
+                    configurations_path))
 
         # Load default TSRs from YAML.
         if self.tsrlibrary is not None:
             if prpy.dependency_manager.is_catkin():
                 from catkin.find_in_workspaces import find_in_workspaces
-                tsrs_paths = find_in_workspaces(search_dirs=['share'], project='herbpy',
-                                 path='config/tsrs.yaml', first_match_only=True)
+                tsrs_paths = find_in_workspaces(search_dirs=['share'],
+                        project='herbpy', path='config/tsrs.yaml',
+                        first_match_only=True)
+
                 if not tsrs_paths:
-                    raise ValueError('Unable to load named tsrs from "config/tsrs.yaml".')
+                    raise ValueError('Unable to load named tsrs from'
+                                     ' "config/tsrs.yaml".')
 
                 tsrs_path = tsrs_paths[0]
             else:
@@ -84,7 +97,10 @@ class HERBRobot(prpy.base.WAMRobot):
 
         # Initialize a default planning pipeline.
         from prpy.planning import Planner, Sequence, Ranked
-        from prpy.planning import CBiRRTPlanner, CHOMPPlanner, IKPlanner, MKPlanner, NamedPlanner, SnapPlanner, SBPLPlanner, OMPLPlanner
+        from prpy.planning import (CBiRRTPlanner, CHOMPPlanner, IKPlanner,
+                                   MKPlanner, NamedPlanner, SnapPlanner,
+                                   SBPLPlanner, OMPLPlanner)
+
         self.cbirrt_planner = CBiRRTPlanner()
         self.mk_planner = MKPlanner()
         self.snap_planner = SnapPlanner()
@@ -92,26 +108,31 @@ class HERBRobot(prpy.base.WAMRobot):
         self.ik_planner = IKPlanner()
         self.chomp_planner = CHOMPPlanner()
         self.ompl_planner = OMPLPlanner(algorithm='RRTConnect')
-        self.planner = Sequence(self.ik_planner,
-                                self.named_planner,
-                                self.snap_planner, 
-                                self.mk_planner,
-                                self.chomp_planner,
-                                self.ompl_planner,
-                                self.cbirrt_planner)
+        self.planner = Sequence(
+            self.ik_planner,
+            self.named_planner,
+            self.snap_planner, 
+            self.mk_planner,
+            self.chomp_planner,
+            self.ompl_planner,
+            self.cbirrt_planner
+        )
 
         # Base planning
         if prpy.dependency_manager.is_catkin():
             from catkin.find_in_workspaces import find_in_workspaces
-            planner_parameters_paths = find_in_workspaces(search_dirs=['share'], project='herbpy',
-                    path='config/base_planner_parameters.yaml', first_match_only=True)
+            planner_parameters_paths = find_in_workspaces(search_dirs=['share'],
+                project='herbpy', path='config/base_planner_parameters.yaml',
+                first_match_only=True)
+
             if not planner_parameters_paths:
-                raise ValueError(
-                    'Unable to load base planner parameters from "config/base_planner_parameters.yaml".')
+                raise ValueError('Unable to load base planner parameters from'
+                                 ' "config/base_planner_parameters.yaml".')
 
             planner_parameters_path = planner_parameters_paths[0]
         else:
-            planner_parameters_path = os.path.join(package_path, 'config/base_planner_parameters.yaml')
+            planner_parameters_path = os.path.join(
+                    package_path, 'config/base_planner_parameters.yaml')
 
         self.sbpl_planner = SBPLPlanner()
         try:
@@ -120,8 +141,9 @@ class HERBRobot(prpy.base.WAMRobot):
                 params_yaml = yaml.load(config_file)
             self.sbpl_planner.SetPlannerParameters(params_yaml)
         except IOError as e:
-            raise ValueError('Failed loading base planner parameters from "{:s}".'.format(
-                planner_parameters_path))
+            raise ValueError(
+                'Failed loading base planner parameters from "{:s}".'.format(
+                    planner_parameters_path))
 
         self.base_planner = self.sbpl_planner
 
@@ -131,10 +153,12 @@ class HERBRobot(prpy.base.WAMRobot):
         self.vision_sim = vision_sim
 
         if not self.vision_sim:
-          args = 'MarkerSensorSystem {0:s} {1:s} {2:s} {3:s} {4:s}'.format('herbpy', '/herbpy', '/head/wam2', 'herb', '/head/wam2')
-          self.vision_sensorsystem = openravepy.RaveCreateSensorSystem(self.GetEnv(), args)
-          if self.vision_sensorsystem is None:
-            raise Exception("creating the marker vision sensorsystem failed")
+            args = 'MarkerSensorSystem {0:s} {1:s} {2:s} {3:s} {4:s}'.format(
+                        'herbpy', '/herbpy', '/head/wam2', 'herb', '/head/wam2')
+
+            self.vision_sensorsystem = openravepy.RaveCreateSensorSystem(self.GetEnv(), args)
+            if self.vision_sensorsystem is None:
+                raise Exception("creating the marker vision sensorsystem failed")
 
     def CloneBindings(self, parent):
         from prpy import Cloned
@@ -203,7 +227,7 @@ class HERBRobot(prpy.base.WAMRobot):
         logger.info("Waiting for object %s to appear.", obj_name)
         try:
             while True:
-                # Check for an object with the appropriate name in the environment.
+                # Check for an object with the appropriate name.
                 bodies = robot.GetEnv().GetBodies()
                 for body in bodies:
                     if body.GetName().startswith('vision_' + obj_name):
@@ -219,11 +243,13 @@ class HERBRobot(prpy.base.WAMRobot):
             if not robot.vision_sim:
                 robot.vision_sensorsystem.SendCommand('Disable')
 
-    def DriveStraightUntilForce(robot, direction, velocity=0.1, force_threshold=3.0,
-                                max_distance=None, timeout=None, left_arm=True, right_arm=True):
+    def DriveStraightUntilForce(robot, direction, velocity=0.1,
+                                force_threshold=3.0, max_distance=None,
+                                timeout=None, left_arm=True, right_arm=True):
         """Deprecated. Use base.DriveStraightUntilForce instead.
         """
-        logger.warning('DriveStraightUntilForce is deprecated. Use base.DriveStraightUntilForce instead.')
+        logger.warning('DriveStraightUntilForce is deprecated. Use'
+                       ' base.DriveStraightUntilForce instead.')
         robot.base.DriveStraightUntilForce(direction, velocity, force_threshold,
                                 max_distance, timeout, left_arm, right_arm)
 
@@ -248,7 +274,8 @@ class HERBRobot(prpy.base.WAMRobot):
         """Deprecated. Use base.PlanToBasePose instead.
         """
         if robot.segway_sim:
-            raise Exception('Driving to named positions is not supported in simulation.')
+            raise Exception('Driving to named positions is not supported'
+                            ' in simulation.')
         else:
             robot.base.controller.SendCommand("Goto " + named_position)
 
