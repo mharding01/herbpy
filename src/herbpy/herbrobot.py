@@ -8,7 +8,11 @@ class HERBRobot(prpy.base.WAMRobot):
     def __init__(self, left_arm_sim, right_arm_sim, right_ft_sim,
                        left_hand_sim, right_hand_sim, left_ft_sim,
                        head_sim, vision_sim, talker_sim, segway_sim):
+        from openravepy import RaveCreateController, RaveCreateSensorSystem
+
         prpy.base.WAMRobot.__init__(self, robot_name='herb')
+
+        env = self.GetEnv()
 
         # Absolute path to this package.
         from rospkg import RosPack
@@ -69,8 +73,8 @@ class HERBRobot(prpy.base.WAMRobot):
         try:
             self.configurations.load_yaml(configurations_path)
         except IOError as e:
-            raise ValueError('
-                Failed laoding named configurations from "{:s}".'.format(
+            raise ValueError(
+                'Failed loading named configurations from "{:s}".'.format(
                     configurations_path))
 
         # Load default TSRs from YAML.
@@ -156,9 +160,39 @@ class HERBRobot(prpy.base.WAMRobot):
             args = 'MarkerSensorSystem {0:s} {1:s} {2:s} {3:s} {4:s}'.format(
                         'herbpy', '/herbpy', '/head/wam2', 'herb', '/head/wam2')
 
-            self.vision_sensorsystem = openravepy.RaveCreateSensorSystem(self.GetEnv(), args)
+            self.vision_sensorsystem = RaveCreateSensorSystem(env, args)
             if self.vision_sensorsystem is None:
                 raise Exception("creating the marker vision sensorsystem failed")
+
+        # Load a standalone ROSController. We don't attach this controller for
+        # the robot and, instead, only use it as a library to publish standard
+        # ROS trajectory_msgs/JointTrajectory messages. In the future, we may
+        # switch to using this controller for all of HERB.
+        # TODO: Publish HandClose and HandOpen as trajectories.
+        # TODO: Publish the Segway's motion as a trajectory (i.e. affine DOFs).
+        if not (left_arm_sim and right_arm_sim and head_sim):
+            logger.debug('Loading ROSController plugin for trajectory visualization.')
+
+            # Args: controller_type node_name namespace [extra_flags [...]]
+            args = 'ROSController prpy visualization noread'
+            self.ros_controller = RaveCreateController(env, args)
+
+            dof_indices  = []
+            dof_indices.extend(self.head.GetArmIndices())
+            dof_indices.extend(self.left_arm.GetArmIndices())
+            dof_indices.extend(self.right_arm.GetArmIndices())
+
+            if self.ros_controller is not None:
+                logger.debug('Initializing ROSController with DOFs %s.', dof_indices)
+                self.ros_controller.Init(self, dof_indices, 0)
+            else:
+                logger.warning('Unable to load ROSController plugin. Trajectory'
+                               ' visualization messages will not be published.'
+                               ' Do you have or_ros_control installed?')
+        else:
+            logger.debug('Skipping laoding ROSController plugin because'
+                         ' left_arm_sim, right_arm_sim, and head_sim are True.')
+
 
     def CloneBindings(self, parent):
         from prpy import Cloned

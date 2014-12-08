@@ -21,6 +21,7 @@
         <openrave optional="cbirrt2"/>
         <openrave optional="orcdchomp"/>
         <!-- controllers -->
+        <openrave optional="or_ros_robot"/>
         <openrave optional="or_owd_controller"/>
         <openrave optional="or_segway_controller"/>
         <openrave optional="or_navigation_controller"/>
