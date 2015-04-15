@@ -169,7 +169,7 @@ class HERBRobot(WAMRobot):
             # FIXME: TrajOpt is temporarily disabled because it can produce
             # trajectories that are in self-collision. We should re-enable as
             # soon as that bug is fixed.
-            self.chomp_planner, # or self.trajopt_planner
+            self.chomp_planner or self.trajopt_planner,
             # If all else fails, call an RRT.
             self.birrt_planner,
             MethodMask(
