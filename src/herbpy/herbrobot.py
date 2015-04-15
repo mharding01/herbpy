@@ -178,7 +178,8 @@ class HERBRobot(WAMRobot):
                     # constraint TSRs.
                     self.cbirrt_planner,
                 ),
-                methods=['PlanToIK', 'PlanToTSR', 'PlanToEndEffectorPose', 'PlanToEndEffectorOffset']
+                methods=['PlanToIK', 'PlanToTSR', 'PlanToEndEffectorPose',
+                         'PlanToEndEffectorOffset']
             )
         )
         self.planner = FirstSupported(
@@ -211,6 +212,18 @@ class HERBRobot(WAMRobot):
                 planner_parameters_path))
 
         self.base_planner = self.sbpl_planner
+
+        #
+        from prpy.planning.retimer import (
+            ParabolicSmoother,
+            HauserParabolicSmoother
+        )
+
+        self.simplifier = None
+        self.smoother = Sequence(
+            ParabolicSmoother(),
+            HauserParabolicSmoother()
+        )
 
         # Actions and TSRs
         from prpy.action import ActionLibrary
