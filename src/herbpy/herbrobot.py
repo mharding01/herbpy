@@ -166,7 +166,10 @@ class HERBRobot(WAMRobot):
             self.vectorfield_planner,
             self.greedyik_planner,
             # Next, try a trajectory optimizer.
-            self.trajopt_planner or self.chomp_planner,
+            # FIXME: TrajOpt is temporarily disabled because it can produce
+            # trajectories that are in self-collision. We should re-enable as
+            # soon as that bug is fixed.
+            self.chomp_planner, # or self.trajopt_planner
             # If all else fails, call an RRT.
             self.birrt_planner,
             MethodMask(
