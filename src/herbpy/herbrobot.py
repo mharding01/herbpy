@@ -113,7 +113,6 @@ class HERBRobot(WAMRobot):
             Sequence,
         )
         from prpy.planning import (
-            BiRRTPlanner,
             CBiRRTPlanner,
             CHOMPPlanner,
             GreedyIKPlanner,
@@ -124,6 +123,7 @@ class HERBRobot(WAMRobot):
             TSRPlanner,
             VectorFieldPlanner
         )
+        from prpy.planning.ompl import PR_RRTConnect
 
         # TODO: These should be meta-planners.
         self.named_planner = NamedPlanner()
@@ -135,8 +135,8 @@ class HERBRobot(WAMRobot):
         self.greedyik_planner = GreedyIKPlanner()
 
         # General-purpose planners.
-        self.birrt_planner = BiRRTPlanner()
         self.cbirrt_planner = CBiRRTPlanner()
+        self.rrt_planner = PR_RRTConnect()
 
         # Trajectory optimizer.
         try:
@@ -160,25 +160,19 @@ class HERBRobot(WAMRobot):
                                 ' least one of these packages is required.')
         
         actual_planner = Sequence(
-            # First, try the straight-line trajectory.
-            self.snap_planner,
-            # Then, try a few simple (and fast!) heuristics.
-            self.vectorfield_planner,
-            self.greedyik_planner,
-            # Next, try a trajectory optimizer.
-            self.trajopt_planner or self.chomp_planner,
-            # If all else fails, call an RRT.
-            self.birrt_planner,
+            ## First, try the straight-line trajectory.
+            #self.snap_planner,
+            ## Then, try a few simple (and fast!) heuristics.
+            #self.vectorfield_planner,
+            #self.greedyik_planner,
+            ## Next, try a trajectory optimizer.
+            #self.trajopt_planner or self.chomp_planner,
+            ## If all else fails, call an RRT.
+            self.rrt_planner,
+            # Fall back on CBiRRT for start and constraint TSRs.
             MethodMask(
-                FirstSupported(
-                    # Try sampling the TSR and planning with BiRRT. This only
-                    # works for PlanToIK and PlanToTSR with strictly goal TSRs.
-                    TSRPlanner(delegate_planner=self.birrt_planner),
-                    # Fall back on CBiRRT, which also handles start and
-                    # constraint TSRs.
-                    self.cbirrt_planner,
-                ),
-                methods=['PlanToIK', 'PlanToTSR', 'PlanToEndEffectorPose', 'PlanToEndEffectorOffset']
+                self.cbirrt_planner,
+                methods=['PlanToTSR', 'PlanToEndEffectorPose', 'PlanToEndEffectorOffset']
             )
         )
         self.planner = FirstSupported(
