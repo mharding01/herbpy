@@ -39,16 +39,18 @@ def point_on(robot, table, manip=None):
                                TSR = table_top_tsr)
     return [table_top_chain]
 
-# Why does this not work with 'conference_table' as second argument?
 @TSRFactory('herb', 'table', 'given_point_on')
 def given_point_on(robot, table, given_table_point, manip=None):
     '''
-    This creates a TSR that allows you to give a particular point to compute TSR to.
-    They are directly on the table, and thus not suitable as an end-effector pose.
+    This creates a TSR that allows you to give a particular point to compute TSR to, 
+    for object placement on table.
+    Lies directly on the table, and thus not suitable as an end-effector pose.
     Grasp specific calculations are necessary to find a suitable end-effector pose.
 
     @param robot The robot performing the grasp
     @param pitcher The pitcher to grasp
+    @param given_table_point The TSR planning destination point on the 
+        surface of the table given in table-coordinates.
     @param manip The manipulator to perform the grasp, if None
        the active manipulator on the robot is used
     '''
