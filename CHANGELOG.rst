@@ -2,6 +2,19 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.7.1 (2015-06-04)
+------------------
+* Updating bowl tsr. Updating default detection frame to match latest perception changes.
+* Correction to tsr values for pointing tsr
+* Contributors: Jennifer King, Michael Koval, Rachel Holladay
+
+1.7.0 (2015-06-01)
+------------------
+* Adding ability to add extra padding around handles picking a point on the tray
+* Updating tray TSR to correctly handle negative distance when lifting tray
+* Adding a function to detect objects to herbpy
+* Contributors: Jennifer King
+
 1.6.1 (2015-05-01)
 ------------------
 * Updating tray TSR
