@@ -189,7 +189,7 @@ def Place(robot, obj, on_obj, given_point_on=None, manip=None, render=True, **kw
     @param robot The robot performing the push grasp
     @param obj The object to place
     @param on_obj The object to place obj on
-    @param given_point_on "X"-marked location on on_obj, in on_obj's coordinates.
+    @param given_point_on 4x4 numpy array (pose matrix) "X"-marked location on on_obj, in on_obj's coordinates.
     @param manip The manipulator to perform the grasp with 
        (if None active manipulator is used)
     @param render Render tsr samples and push direction vectors during planning
@@ -207,10 +207,10 @@ def Place(robot, obj, on_obj, given_point_on=None, manip=None, render=True, **kw
         dest_tsr = robot.tsrlibrary(on_obj, 'point_on', padding=obj_radius)
     else:
         # Given a point on the on_obj to place obj
-        dest_tsr = robot.tsrlibrary(on_obj, 'given_point_on', given_point_on );
+        dest_tsr = robot.tsrlibrary(on_obj, 'given_point_on', given_point_on, manip=manip);
 
     #  Now use this to get a tsr for sampling ee_poses
-    place_tsr = robot.tsrlibrary(obj, 'place', pose_tsr_chain = dest_tsr[0])
+    place_tsr = robot.tsrlibrary(obj, 'place', pose_tsr_chain = dest_tsr[0], manip=manip)
 
     # Plan to the grasp
     with prpy.viz.RenderTSRList(place_tsr, robot.GetEnv(), render=render):
