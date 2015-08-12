@@ -189,7 +189,11 @@ def Place(robot, obj, on_obj, given_point_on=None, manip=None, render=True, **kw
     @param robot The robot performing the push grasp
     @param obj The object to place
     @param on_obj The object to place obj on
+<<<<<<< HEAD
     @param given_point_on 4x4 numpy array (pose matrix) "X"-marked location on on_obj, in on_obj's coordinates.
+=======
+    @param given_point_on "X"-marked location on on_obj, in on_obj's coordinates.
+>>>>>>> 9f308684b627a4226976116aa37f44343fa92eb8
     @param manip The manipulator to perform the grasp with 
        (if None active manipulator is used)
     @param render Render tsr samples and push direction vectors during planning
